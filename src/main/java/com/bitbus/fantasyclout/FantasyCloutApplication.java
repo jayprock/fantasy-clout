@@ -1,4 +1,4 @@
-package com.bitbus.fantasyclout.fantasyclout;
+package com.bitbus.fantasyclout;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class FantasyCloutApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(FantasyCloutApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(FantasyCloutApplication.class, args);
+    }
 }
