@@ -7,7 +7,7 @@ import lombok.Data;
 
 @MappedSuperclass
 @Data
-public class Team {
+public abstract class Team {
 
     @Id
     private int teamId;

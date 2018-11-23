@@ -2,6 +2,7 @@ package com.bitbus.fantasyclout.player.football;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -34,6 +35,12 @@ public class FootballPlayerService {
         return playerRepo.findAll();
     }
 
+    public Optional<FootballPlayer> create(FootballPlayerDTO playerDTO) {
+        List<FootballPlayer> existingPlayers = findAll();
+        List<FootballTeam> teams = teamService.findAll();
+        return create(playerDTO, teams, existingPlayers);
+    }
+
     @Transactional
     public void create(List<FootballPlayerDTO> playerDTOs) {
         List<FootballPlayer> footballPlayers = new ArrayList<>();
@@ -41,28 +48,39 @@ public class FootballPlayerService {
         List<FootballTeam> teams = teamService.findAll();
         log.info("Attempting to create {} players", playerDTOs.size());
         for (FootballPlayerDTO playerDTO : playerDTOs) {
-            FootballTeam team = teams.stream() //
-                    .filter(tm -> tm.getAbbreviation().equals(playerDTO.getTeamAbbr())) //
-                    .findFirst() //
-                    .orElseThrow(() -> new RuntimeException(
-                            "There is no team associated with abbreviation: " + playerDTO.getTeamAbbr()));
-            FootballPlayerPosition position = FootballPlayerPosition.valueOf(playerDTO.getPosition());
-
-            boolean playerAlreadyExists = existingPlayers.stream() //
-                    .anyMatch(existingPlayer -> existingPlayer.getName().equals(playerDTO.getName())
-                            && existingPlayer.getPosition() == position && existingPlayer.getTeam().equals(team));
-            if (playerAlreadyExists) {
-                log.warn("Already found player associated with {}:{}:{}", playerDTO.getName(), playerDTO.getPosition(),
-                        playerDTO.getTeamAbbr());
-                continue;
+            Optional<FootballPlayer> player = create(playerDTO, teams, existingPlayers);
+            if (player.isPresent()) {
+                footballPlayers.add(player.get());
             }
-            FootballPlayer footballPlayer = new FootballPlayer();
-            footballPlayer.setName(playerDTO.getName());
-            footballPlayer.setTeam(team);
-            footballPlayer.setPosition(position);
-            footballPlayers.add(footballPlayer);
         }
-        playerRepo.saveAll(footballPlayers);
         log.info("Created {} players from {} player DTOs", footballPlayers.size(), playerDTOs.size());
+    }
+
+    private Optional<FootballPlayer> create(FootballPlayerDTO playerDTO, List<FootballTeam> teams,
+            List<FootballPlayer> existingPlayers) {
+        FootballTeam team = teams.stream() //
+                .filter(tm -> tm.getAbbreviation().equals(playerDTO.getTeamAbbr())) //
+                .findFirst() //
+                .orElseThrow(() -> new RuntimeException(
+                        "There is no team associated with abbreviation: " + playerDTO.getTeamAbbr()));
+        FootballPlayerPosition position = FootballPlayerPosition.valueOf(playerDTO.getPosition());
+
+        Optional<FootballPlayer> existingPlayer = existingPlayers.stream() //
+                .filter(player -> player.getName().equals(playerDTO.getName())) //
+                .filter(player -> player.getPosition() == position) //
+                .filter(player -> player.getTeam().equals(team)) //
+                .findAny();
+        if (existingPlayer.isPresent()) {
+            log.warn("Player {} already exists and will not be saved", existingPlayer.get());
+            return Optional.empty();
+        }
+
+        FootballPlayer footballPlayer = new FootballPlayer();
+        footballPlayer.setName((position != FootballPlayerPosition.DEF) ? playerDTO.getName() : team.getName());
+        footballPlayer.setTeam(team);
+        footballPlayer.setPosition(position);
+
+        FootballPlayer player = playerRepo.save(footballPlayer);
+        return Optional.of(player);
     }
 }

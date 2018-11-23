@@ -9,7 +9,7 @@ import lombok.Data;
 
 @MappedSuperclass
 @Data
-public class Player {
+public abstract class Player {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

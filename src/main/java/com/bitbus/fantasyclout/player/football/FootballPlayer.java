@@ -12,13 +12,11 @@ import com.bitbus.fantasyclout.team.football.FootballTeam;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 @Entity
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
-@ToString
 public class FootballPlayer extends Player {
 
     @Enumerated(EnumType.STRING)
@@ -27,5 +25,10 @@ public class FootballPlayer extends Player {
     @ManyToOne
     @JoinColumn(name = "team_id")
     private FootballTeam team;
+
+    @Override
+    public String toString() {
+        return getName() + ":" + team.getAbbreviation() + ":" + position;
+    }
 
 }
